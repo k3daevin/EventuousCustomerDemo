@@ -11,6 +11,8 @@ namespace EventuousCustomerDemo.Customer
 
         public ImmutableHashSet<string> Tags { get; init; } = ImmutableHashSet<string>.Empty;
 
+        public int Cash { get; init; } = 0;
+
         public CustomerState()
         {            
             On<NameChangedEvent>((state, @event) =>
@@ -28,6 +30,12 @@ namespace EventuousCustomerDemo.Customer
                 state with
                 {
                     Tags = state.Tags.Except(@event.Tags),
+                });
+
+            On<CashChangedEvent>((state, @event) =>
+                state with
+                {
+                    Cash = Cash + @event.Amount,
                 });
         }
     }

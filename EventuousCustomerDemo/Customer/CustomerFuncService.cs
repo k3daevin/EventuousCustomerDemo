@@ -6,6 +6,10 @@ using System.Threading;
 
 namespace EventuousCustomerDemo.Customer
 {
+    public static class CustomerFuncServiceExtensions
+    {
+        public static StreamName GetStream(this IFuncCommandService<CustomerState> _, string id) => new($"Customer-{id}");
+    }
     public class CustomerFuncService : FunctionalCommandService<CustomerState>
     {
         public CustomerFuncService(IEventStore store, TypeMapper? typeMap = null) : base(store, typeMap)
@@ -13,9 +17,10 @@ namespace EventuousCustomerDemo.Customer
             OnNew<CreateCustomerCommand>(static cmd => GetStream(cmd.CustomerId), CreateCustomer);
             OnExisting<ChangeNameCommand>(static cmd => GetStream(cmd.CustomerId), ChangeName);
             OnExisting<ChangeTagsCommand>(static cmd => GetStream(cmd.CustomerId), ChangeTags);
+            OnExisting<ChangeCashCommand>(static cmd => GetStream(cmd.CustomerId), ChangeCash);
         }
 
-        public static StreamName GetStream(string id) => new StreamName($"Customer-{id}");
+        public static StreamName GetStream(string id) => CustomerFuncServiceExtensions.GetStream(null!, id);
 
         // POTENTIAL integrate in FunctionalCommandService
         public async Task<CustomerState> GetState(string customerId, CancellationToken cancellationToken)
@@ -29,10 +34,7 @@ namespace EventuousCustomerDemo.Customer
             CreateCustomerCommand cmd
             )
         {
-            if (string.IsNullOrEmpty(cmd.Name))
-            {
-                throw new ArgumentException("Name cannot be null.");
-            }
+            ValidateName(cmd.Name);
 
             yield return new NameChangedEvent(cmd.Name);
 
@@ -49,10 +51,7 @@ namespace EventuousCustomerDemo.Customer
             ChangeNameCommand cmd
         )
         {
-            if (string.IsNullOrEmpty(cmd.Name))
-            {
-                throw new ArgumentException("Name cannot be null.");
-            }
+            ValidateName(cmd.Name);
 
             if (cmd.Name == state.Name)
             {
@@ -80,7 +79,8 @@ namespace EventuousCustomerDemo.Customer
             if (cmd.Add != null && cmd.Add.Any())
             {
                 var toAdd = cmd.Add.Except(state.Tags);
-                if (toAdd.Any()) {
+                if (toAdd.Any())
+                {
                     yield return new TagsAddedEvent(toAdd.ToArray());
                 }
             }
@@ -95,5 +95,26 @@ namespace EventuousCustomerDemo.Customer
             }
         }
 
+        static IEnumerable<object> ChangeCash(
+            CustomerState state,
+            object[] originalEvents,
+            ChangeCashCommand cmd
+        )
+        {
+            if (state.Cash + cmd.Amount < 0)
+            {
+                throw new ArgumentException("Cash cannot be smaller than 0.");
+            }
+
+            yield return new CashChangedEvent(cmd.Amount);
+        }
+
+        static void ValidateName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException("Name cannot be null.");
+            }
+        }
     }
 }

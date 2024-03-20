@@ -10,12 +10,14 @@ namespace EventuousCustomerDemo.Customer
     public class CustomerApi : CommandHttpApiBaseFunc<CustomerState>
     {
         private readonly IEventStore _eventStore;
+        private readonly IFuncCommandService<CustomerState> _funcCommandService;
 
         public CustomerApi(
             IFuncCommandService<CustomerState> service,
             IEventStore eventStore
             ) : base(service) {
             _eventStore = eventStore;
+            _funcCommandService = service;
         }
 
         [HttpPost]
@@ -39,11 +41,18 @@ namespace EventuousCustomerDemo.Customer
             CancellationToken cancellationToken
         ) => Handle(cmd, cancellationToken);
 
+        [HttpPost]
+        [Route("changeCash")]
+        public Task<ActionResult<Result>> ChangeCash(
+            [FromBody] ChangeCashCommand cmd,
+            CancellationToken cancellationToken
+        ) => Handle(cmd, cancellationToken);
+
 
         [HttpGet("getState/{customerId}")]
         public async Task<IActionResult> GetState(string customerId, CancellationToken cancellationToken)
         {
-            var streamName = CustomerFuncService.GetStream(customerId);
+            var streamName = _funcCommandService.GetStream(customerId);
             var loadedState = await _eventStore.LoadState<CustomerState>(streamName, cancellationToken);
             return Ok(loadedState.State);
         }

@@ -18,7 +18,8 @@ namespace EventuousCustomerDemo.Customer
             On<NameChangedEvent>((state, @event) =>
                 state with { 
                     Name = @event.Name,
-                });
+                }
+            );
             
             On<TagsAddedEvent>((state, @event) =>
                 state with { 
@@ -30,13 +31,15 @@ namespace EventuousCustomerDemo.Customer
                 state with
                 {
                     Tags = state.Tags.Except(@event.Tags),
-                });
+                }
+            );
 
             On<CashChangedEvent>((state, @event) =>
                 state with
                 {
                     Cash = Cash + @event.Amount,
-                });
+                }
+            );
         }
     }
 }

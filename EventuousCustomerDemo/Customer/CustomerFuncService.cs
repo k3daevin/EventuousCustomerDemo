@@ -113,7 +113,7 @@ namespace EventuousCustomerDemo.Customer
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException("Name cannot be null.");
+                throw new ArgumentException("Name cannot be null or empty.");
             }
         }
     }

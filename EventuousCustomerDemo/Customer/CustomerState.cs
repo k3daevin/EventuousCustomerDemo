@@ -13,31 +13,33 @@ namespace EventuousCustomerDemo.Customer
 
         public int Cash { get; init; } = 0;
 
+
+
         public CustomerState()
         {            
-            On<NameChangedEvent>((state, @event) =>
+            On<NameChangedEvent>(static (state, @event) =>
                 state with { 
                     Name = @event.Name,
                 }
             );
             
-            On<TagsAddedEvent>((state, @event) =>
+            On<TagsAddedEvent>(static (state, @event) =>
                 state with { 
                     Tags = state.Tags.Union(@event.Tags),
                 }
             );
 
-            On<TagsRemovedEvent>((state, @event) =>
+            On<TagsRemovedEvent>(static (state, @event) =>
                 state with
                 {
                     Tags = state.Tags.Except(@event.Tags),
                 }
             );
 
-            On<CashChangedEvent>((state, @event) =>
+            On<CashChangedEvent>(static (state, @event) =>
                 state with
                 {
-                    Cash = Cash + @event.Amount,
+                    Cash = state.Cash + @event.Amount,
                 }
             );
         }
